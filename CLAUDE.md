@@ -63,6 +63,7 @@ Each converter (ffmpeg, pandoc, etc.) is wrapped in a TypeScript module that:
 - `HTTP_ALLOWED`: Allow HTTP (not just HTTPS)
 - `AUTO_DELETE_EVERY_N_HOURS`: Cleanup interval
 - `MAX_CONVERT_PROCESS`: Parallel conversion limit
+- `API_BASE_URL`: Full API base URL for OpenAPI spec (e.g., "https://convertx.example.com/api/v1")
 
 ## Database Schema
 ```sql

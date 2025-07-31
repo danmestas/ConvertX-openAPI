@@ -1,5 +1,4 @@
 import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import { API_ENABLED, API_PREFIX } from "../../helpers/env";
 import { auth } from "./auth";
@@ -9,8 +8,9 @@ import { files } from "./files";
 import { health } from "./health";
 import { jobs } from "./jobs";
 import { debug } from "./debug";
+import { openapi } from "./openapi";
 
-// Main API router
+// Main API router with docs
 export const api = new Elysia({
   prefix: API_PREFIX || "/api/v1",
   name: "api/v1",
@@ -24,146 +24,9 @@ export const api = new Elysia({
       exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
     })
   )
-  .use(
-    swagger({
-      documentation: {
-        info: {
-          title: "ConvertX API",
-          version: "1.0.0",
-          description: "File conversion API supporting 1000+ formats",
-          contact: {
-            name: "ConvertX Support",
-            email: "support@convertx.local",
-          },
-        },
-        tags: [
-          { name: "auth", description: "Authentication endpoints" },
-          { name: "converters", description: "List available converters" },
-          { name: "conversions", description: "File conversion operations" },
-          { name: "jobs", description: "Job management" },
-          { name: "files", description: "File operations" },
-          { name: "health", description: "Health check" },
-        ],
-        servers: [
-          {
-            url: "http://localhost:3110/api/v1",
-            description: "Local development server",
-          },
-          {
-            url: "https://convertx.example.com/api/v1",
-            description: "Production server",
-          },
-        ],
-        security: [
-          {
-            bearerAuth: [],
-          },
-          {
-            apiKey: [],
-          },
-        ],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: "http",
-              scheme: "bearer",
-              bearerFormat: "JWT",
-              description: "JWT authentication token",
-            },
-            apiKey: {
-              type: "apiKey",
-              in: "header",
-              name: "X-API-Key",
-              description: "API key for programmatic access",
-            },
-          },
-          schemas: {
-            Error: {
-              type: "object",
-              properties: {
-                success: { type: "boolean", example: false },
-                error: { type: "string", example: "Error message" },
-                code: { type: "string", example: "ERROR_CODE" },
-              },
-              required: ["success", "error"],
-            },
-            Success: {
-              type: "object",
-              properties: {
-                success: { type: "boolean", example: true },
-                data: { type: "object" },
-              },
-              required: ["success"],
-            },
-          },
-          responses: {
-            Unauthorized: {
-              description: "Unauthorized",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/Error",
-                  },
-                  example: {
-                    success: false,
-                    error: "Unauthorized",
-                    code: "UNAUTHORIZED",
-                  },
-                },
-              },
-            },
-            NotFound: {
-              description: "Resource not found",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/Error",
-                  },
-                  example: {
-                    success: false,
-                    error: "Resource not found",
-                    code: "NOT_FOUND",
-                  },
-                },
-              },
-            },
-            BadRequest: {
-              description: "Bad request",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/Error",
-                  },
-                  example: {
-                    success: false,
-                    error: "Invalid request parameters",
-                    code: "BAD_REQUEST",
-                  },
-                },
-              },
-            },
-            ServerError: {
-              description: "Internal server error",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/Error",
-                  },
-                  example: {
-                    success: false,
-                    error: "Internal server error",
-                    code: "INTERNAL_ERROR",
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      path: "/swagger",
-      exclude: ["/swagger", "/swagger/json"],
-    })
-  )
+  // Custom OpenAPI documentation available at /api/v1/openapi
+  // Note: Elysia swagger plugin has a composition bug that causes syntax errors
+  // when used with CORS and other middleware. Using custom implementation instead.
   .onError(({ code, error, set }) => {
     console.error(`API Error [${code}]:`, error);
     
@@ -209,5 +72,6 @@ if (API_ENABLED) {
     .use(conversions)
     .use(jobs)
     .use(files)
-    .use(debug);
+    .use(debug)
+    .use(openapi);
 }

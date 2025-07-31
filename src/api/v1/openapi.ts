@@ -37,26 +37,30 @@ export const openapi = new Elysia({ prefix: "/openapi" })
       }
     );
   })
-  .get("/spec.json", () => {
+  .get("/spec.json", ({ request }) => {
+    // Use API_BASE_URL if set, otherwise build from request
+    let serverUrl: string;
+    
+    if (process.env.API_BASE_URL) {
+      serverUrl = process.env.API_BASE_URL;
+    } else {
+      const host = request.headers.get("host") || "localhost:3110";
+      const protocol = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+      const webroot = process.env.WEBROOT || "";
+      serverUrl = `${protocol}://${host}${webroot}/api/v1`;
+    }
+    
     return {
       openapi: "3.0.0",
       info: {
         title: "ConvertX API",
         version: "1.0.0",
         description: "File conversion API supporting 1000+ formats",
-        contact: {
-          name: "ConvertX Support",
-          email: "support@convertx.local",
-        },
       },
       servers: [
         {
-          url: "http://localhost:3110/api/v1",
-          description: "Local development server",
-        },
-        {
-          url: "https://convertx.example.com/api/v1",
-          description: "Production server",
+          url: serverUrl,
+          description: "API server",
         },
       ],
       tags: [
